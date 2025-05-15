@@ -1,0 +1,1 @@
+A small project to automatically generate android manifest and resource files. This is a work in progress, I make no guarantees about its usability. Meant to be used with https://github.com/silbinarywolf/zig-android-sdk
