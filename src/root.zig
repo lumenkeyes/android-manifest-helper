@@ -1,6 +1,5 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
-const android = @import("android");
 
 pub const embeddedResource = struct {
     name: []const u8,
@@ -175,10 +174,19 @@ hardwareAccelerated: ?bool = null,
 icon: ?[]const u8 = null, //"drawable resource",
 immersive: ?bool = null,
 label: ?[]const u8 = "@string/app_name", //"string resource",
-launchMode: ?enum {standard , singleTop ,
-                  singleTask , singleInstance , singleInstancePerTask } = null,
-lockTaskMode: ?enum {normal , never ,
-                  if_whitelisted , always } = null,
+launchMode: ?enum {
+        standard, 
+        singleTop,
+        singleTask,
+        singleInstance, 
+        singleInstancePerTask 
+    } = null,
+lockTaskMode: ?enum {
+        normal, 
+        never,
+        if_whitelisted, 
+        always 
+    } = null,
 maxRecents: ?i64 = null,
 maxAspectRatio: ?f64 = null,
 multiprocess: ?bool = null,
@@ -190,12 +198,21 @@ persistableMode: ?enum {persistRootOnly ,
 permission: ?[]const u8 = null,
 process: ?[]const u8 = null,
 relinquishTaskIdentity: ?bool = null,
-requireContentUriPermissionFromCaller: ?enum {none , read , readAndWrite ,
-                                             readOrWrite , write }  = null,
+requireContentUriPermissionFromCaller: ?enum {
+        none,
+        read,
+        readAndWrite,
+        readOrWrite, 
+        write
+    }  = null,
 resizeableActivity: ?bool = null,
-screenOrientation: ?enum {unspecified , behind ,
-                         reverseLandscape , reversePortrait ,
-                         sensorLandscape , sensorPortrait ,
+screenOrientation: ?enum {
+        unspecified, 
+        behind,
+        reverseLandscape, 
+        reversePortrait ,
+        sensorLandscape , 
+        sensorPortrait ,
                          userLandscape , userPortrait ,
                          sensor , fullSensor , nosensor ,
                          user , fullUser , locked } = null,
@@ -204,12 +221,21 @@ stateNotNeeded: ?bool = null,
 supportsPictureInPicture: ?bool = null,
 taskAffinity: ?[]const u8 = null,
 theme: ?[]const u8 = null, //"resource or theme",
-uiOptions: ?enum {none , splitActionBarWhenNarrow } = null,
-windowSoftInputMode: ?enum {stateUnspecified,
-                           stateUnchanged, stateHidden,
-                           stateAlwaysHidden, stateVisible,
-                           stateAlwaysVisible, adjustUnspecified,
-                           adjustResize, adjustPan } = null,
+uiOptions: ?enum {
+        none, 
+        splitActionBarWhenNarrow 
+    } = null,
+windowSoftInputMode: ?enum {
+        stateUnspecified,
+        stateUnchanged, 
+        stateHidden,
+        stateAlwaysHidden, 
+        stateVisible,
+        stateAlwaysVisible, 
+        adjustUnspecified,
+        adjustResize, 
+        adjustPan 
+    } = null,
 };
 
 const indent = " " ** 2;
@@ -265,7 +291,7 @@ pub const manifest = struct {
         self.b = b;
         return self;
     }
-    pub fn addToApk(self: *Self, apk: *android.APK) !void {
+    pub fn addToApk(self: *Self, apk: anytype) !void {
         const conf = self.conf;
         const b = self.b;
 
