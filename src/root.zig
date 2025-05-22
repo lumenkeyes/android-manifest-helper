@@ -1,15 +1,13 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
 
-pub const embeddedResource = struct {
-    name: []const u8,
-    bytes: []const u8
-};
-
 pub const ResourcesConfig = struct {
     appName: []const u8,
     packageName: []const u8,
-    embedFiles: []const embeddedResource = &.{}
+    embedFiles: []const struct {
+        name: []const u8,
+        bytes: []const u8
+    } = &.{}
 };
 
 pub fn createResources(b: *std.Build, conf: ResourcesConfig) !LazyPath {
@@ -45,35 +43,23 @@ pub fn createResources(b: *std.Build, conf: ResourcesConfig) !LazyPath {
 pub const ManifestConfig = struct {
     apiLevel: u32,
     packageName: []const u8,
-    appProperties: AndroidAppProperties = .{},
     activities: []const AndroidActivity,
-    customAppProperties: []const CustomAndroidAppProperty = &.{},
-    permissions: []const AndroidPermission = &.{},
-    features: []const AndroidFeature = &.{},
+    appProperties: struct{
+        standard: AndroidAppProperties = .{},
+        custom: []const struct {
+            name: []const u8,
+            value: []const u8
+        } = &.{}
+    } = .{},
+    permissions: []const struct {
+        name: []const u8,
+        requested: bool = true
+    } = &.{},
+    features: []const struct {
+        name: []const u8,
+        required: bool,
+    } = &.{},
     glEsVersion: []const u8 = ""
-};
-
-pub const AndroidFeature = struct {
-    name: []const u8,
-    required: bool,
-};
-
-pub const AndroidPermission = struct {
-    name: []const u8,
-    requested: bool = true
-};
-
-
-pub const AndroidAppCategory = enum {
-    accessibility,
-    audio,
-    game,
-    image,
-    maps,
-    news,
-    productivity,
-    social,
-    video
 };
 
 // https://developer.android.com/guide/topics/manifest/application-element
@@ -82,7 +68,17 @@ pub const AndroidAppProperties = struct {
     allowBackup: ?bool = null,
     allowClearUserData: ?bool = null,
     allowNativeHeapPointerTagging: ?bool = null,
-    appCategory: ?AndroidAppCategory = null,
+    appCategory: ?enum {
+        accessibility,
+        audio,
+        game,
+        image,
+        maps,
+        news,
+        productivity,
+        social,
+        video
+    } = null,
     backupAgent: ?[]const u8 = null,
     backupInForeground: ?bool = null,
     banner: ?[]const u8 = null, //drawable resource
@@ -124,19 +120,116 @@ pub const AndroidAppProperties = struct {
     usesCleartextTraffic: ?bool = null,
     vmSafeMode: ?bool = null,
 };
-pub const CustomAndroidAppProperty = struct {
-    name: []const u8,
-    value: []const u8
-};
-
-pub const AndroidActivityMetaData = struct {
-    name: []const u8,
-    value: []const u8
-};
 
 pub const AndroidActivity = struct {
-    properties: AndroidActivityProperties,
-    metadata: ?[]const AndroidActivityMetaData = &.{
+    properties: struct {
+        allowEmbedded: ?bool = null,
+        allowTaskReparenting: ?bool = null,
+        alwaysRetainTaskState: ?bool = null,
+        autoRemoveFromRecents: ?bool = null,
+        banner: ?[]const u8 = null, //"drawable resource",
+        canDisplayOnRemoteDevices: ?bool = null,
+        clearTaskOnLaunch: ?bool = null,
+        colorMode: ?enum { hdr , wideColorGamut } = null,
+        configChanges: ?[]const enum {
+            colorMode,
+            density,
+            fontScale,
+            fontWeightAdjustment,
+            grammaticalGender,
+            keyboard,
+            keyboardHidden,
+            layoutDirection,
+            locale,
+            mcc,
+            mnc,
+            navigation,
+            orientation,
+            screenLayout,
+            screenSize,
+            smallestScreenSize,
+            touchscreen,
+            uiMode
+        } = null,
+        directBootAware: ?bool = null,
+        documentLaunchMode: ?enum {intoExisting , always ,
+                              none , never } = null,
+        enabled: ?bool = null,
+        enabledOnBackInvokedCallback: ?bool = null,
+        excludeFromRecents: ?bool = null,
+        exported: ?bool = true,
+        finishOnTaskLaunch: ?bool = null,
+        hardwareAccelerated: ?bool = null,
+        icon: ?[]const u8 = null, //"drawable resource",
+        immersive: ?bool = null,
+        label: ?[]const u8 = "@string/app_name", //"string resource",
+        launchMode: ?enum {
+                standard, 
+                singleTop,
+                singleTask,
+                singleInstance, 
+                singleInstancePerTask 
+            } = null,
+        lockTaskMode: ?enum {
+                normal, 
+                never,
+                if_whitelisted, 
+                always 
+            } = null,
+        maxRecents: ?i64 = null,
+        maxAspectRatio: ?f64 = null,
+        multiprocess: ?bool = null,
+        name: ?[]const u8 = null,
+        noHistory: ?bool = null,
+        parentActivityName: ?[]const u8 = null ,
+        persistableMode: ?enum {persistRootOnly , 
+                               persistAcrossReboots , persistNever } = null,
+        permission: ?[]const u8 = null,
+        process: ?[]const u8 = null,
+        relinquishTaskIdentity: ?bool = null,
+        requireContentUriPermissionFromCaller: ?enum {
+                none,
+                read,
+                readAndWrite,
+                readOrWrite, 
+                write
+            }  = null,
+        resizeableActivity: ?bool = null,
+        screenOrientation: ?enum {
+                unspecified, 
+                behind,
+                reverseLandscape, 
+                reversePortrait ,
+                sensorLandscape , 
+                sensorPortrait ,
+                                 userLandscape , userPortrait ,
+                                 sensor , fullSensor , nosensor ,
+                                 user , fullUser , locked } = null,
+        showForAllUsers: ?bool = null,
+        stateNotNeeded: ?bool = null,
+        supportsPictureInPicture: ?bool = null,
+        taskAffinity: ?[]const u8 = null,
+        theme: ?[]const u8 = null, //"resource or theme",
+        uiOptions: ?enum {
+                none, 
+                splitActionBarWhenNarrow 
+            } = null,
+        windowSoftInputMode: ?enum {
+                stateUnspecified,
+                stateUnchanged, 
+                stateHidden,
+                stateAlwaysHidden, 
+                stateVisible,
+                stateAlwaysVisible, 
+                adjustUnspecified,
+                adjustResize, 
+                adjustPan 
+            } = null,
+},
+    metadata: ?[]const struct {
+        name: []const u8,
+        value: []const u8
+    } = &.{
         .{
             .name="android.app.lib_name",
             .value="main"
@@ -145,129 +238,40 @@ pub const AndroidActivity = struct {
     intentFilters: ?[]const u8 = null,
 };
 
-pub const AndroidActivityHandleableConfigChanges = enum {
- colorMode, density, fontScale, fontWeightAdjustment,
-        grammaticalGender, keyboard, keyboardHidden, layoutDirection, locale,
-        mcc, mnc, navigation, orientation, screenLayout, screenSize,
-        smallestScreenSize, touchscreen, uiMode
-};
-
-pub const AndroidActivityProperties = struct {
-allowEmbedded: ?bool = null,
-allowTaskReparenting: ?bool = null,
-alwaysRetainTaskState: ?bool = null,
-autoRemoveFromRecents: ?bool = null,
-banner: ?[]const u8 = null, //"drawable resource",
-canDisplayOnRemoteDevices: ?bool = null,
-clearTaskOnLaunch: ?bool = null,
-colorMode: ?enum { hdr , wideColorGamut } = null,
-configChanges: ?[]const AndroidActivityHandleableConfigChanges = null,
-directBootAware: ?bool = null,
-documentLaunchMode: ?enum {intoExisting , always ,
-                      none , never } = null,
-enabled: ?bool = null,
-enabledOnBackInvokedCallback: ?bool = null,
-excludeFromRecents: ?bool = null,
-exported: ?bool = true,
-finishOnTaskLaunch: ?bool = null,
-hardwareAccelerated: ?bool = null,
-icon: ?[]const u8 = null, //"drawable resource",
-immersive: ?bool = null,
-label: ?[]const u8 = "@string/app_name", //"string resource",
-launchMode: ?enum {
-        standard, 
-        singleTop,
-        singleTask,
-        singleInstance, 
-        singleInstancePerTask 
-    } = null,
-lockTaskMode: ?enum {
-        normal, 
-        never,
-        if_whitelisted, 
-        always 
-    } = null,
-maxRecents: ?i64 = null,
-maxAspectRatio: ?f64 = null,
-multiprocess: ?bool = null,
-name: ?[]const u8 = null,
-noHistory: ?bool = null,
-parentActivityName: ?[]const u8 = null ,
-persistableMode: ?enum {persistRootOnly , 
-                       persistAcrossReboots , persistNever } = null,
-permission: ?[]const u8 = null,
-process: ?[]const u8 = null,
-relinquishTaskIdentity: ?bool = null,
-requireContentUriPermissionFromCaller: ?enum {
-        none,
-        read,
-        readAndWrite,
-        readOrWrite, 
-        write
-    }  = null,
-resizeableActivity: ?bool = null,
-screenOrientation: ?enum {
-        unspecified, 
-        behind,
-        reverseLandscape, 
-        reversePortrait ,
-        sensorLandscape , 
-        sensorPortrait ,
-                         userLandscape , userPortrait ,
-                         sensor , fullSensor , nosensor ,
-                         user , fullUser , locked } = null,
-showForAllUsers: ?bool = null,
-stateNotNeeded: ?bool = null,
-supportsPictureInPicture: ?bool = null,
-taskAffinity: ?[]const u8 = null,
-theme: ?[]const u8 = null, //"resource or theme",
-uiOptions: ?enum {
-        none, 
-        splitActionBarWhenNarrow 
-    } = null,
-windowSoftInputMode: ?enum {
-        stateUnspecified,
-        stateUnchanged, 
-        stateHidden,
-        stateAlwaysHidden, 
-        stateVisible,
-        stateAlwaysVisible, 
-        adjustUnspecified,
-        adjustResize, 
-        adjustPan 
-    } = null,
-};
 
 const indent = " " ** 2;
-const appPropIndent = 2;
-const activityPropIndent = 3;
+const appPropIndent = 3;
+const activityPropIndent = 4;
 const tagClose = " />";
 
-fn anyAsString(b: *std.Build, comptime T: anytype, val: anytype, comptime fieldName: []const u8) []const u8 {
-        const valType = (@typeInfo(@TypeOf(@field(T{}, fieldName)))).optional.child;
-        const valString = switch(valType) {
+fn anyAsString(allocator: std.mem.Allocator, comptime T: type, val: anytype, comptime fieldName: []const u8) []const u8 {
+        _ = fieldName;
+        const valString = switch(T) {
             []const u8 => val,
-            bool, i64, u64, f64 => b.fmt("{any}", .{val}),
-            []const AndroidActivityHandleableConfigChanges => blk: {
-                var tagNames = std.ArrayList([]const u8).init(b.allocator);
-                for(val) |name| {
-                    tagNames.append(@tagName(name)) catch @panic("OOM");
-                }
-                const nameSlices = tagNames.toOwnedSlice() catch @panic("OOM");
-                break :blk std.mem.join(b.allocator, "|", nameSlices) catch @panic("OOM");
-            },
-            else => @tagName(val)
-        };
+            bool, i64, u64, f64 => std.fmt.allocPrint(allocator, "{any}", .{val}) catch @panic("OOM"),
+            else => blk: {
+                if(@hasField(T, "len")) {
+                    var tagNames = std.ArrayList([]const u8).init(allocator);
+                    for(val) |name| {
+                        tagNames.append(@tagName(name)) catch @panic("OOM");
+                    }
+                    const nameSlices = tagNames.toOwnedSlice() catch @panic("OOM");
+                    break :blk std.mem.join(allocator, "|", nameSlices) catch @panic("OOM");
+            } else {
+                break :blk @tagName(val);
+            }
+        }
+    };
     return valString;
 }
 
-fn formatProps(b: *std.Build, instance: anytype, comptime indentCount: usize) ![]const u8 {
+fn formatProps(allocator: std.mem.Allocator, instance: anytype, comptime indentCount: usize) ![]const u8 {
         var propertiesString: []const u8 = "";
         var propCount: usize = 0;
         inline for(comptime std.meta.fieldNames(@TypeOf(instance))) |fieldName| {
             if(@field(instance, fieldName)) |val| {
-                const valString = anyAsString(b, @TypeOf(instance), val, fieldName);
-                propertiesString = try std.mem.concat(b.allocator, u8, &.{
+                const valString = anyAsString(allocator, @TypeOf(val), val, fieldName);
+                propertiesString = try std.mem.concat(allocator, u8, &.{
                     propertiesString,
                     if(propCount > 0) (indent ** indentCount) else "",
                     "android:", fieldName, "=\"", valString, "\"", "\n"
@@ -284,20 +288,21 @@ fn formatProps(b: *std.Build, instance: anytype, comptime indentCount: usize) ![
 pub const manifest = struct {
     const Self = @This();
     conf: ManifestConfig,
-    b: *std.Build,
-    pub fn init(b: *std.Build, conf: ManifestConfig) !*Self {
-        var self = try b.allocator.create(Self);
+    allocator: std.mem.Allocator,
+    pub fn init(alloc: std.mem.Allocator, conf: ManifestConfig) !*Self {
+        var self = try alloc.create(Self);
         self.conf = conf;
-        self.b = b;
+        self.allocator = alloc;
         return self;
     }
-    pub fn addToApk(self: *Self, apk: anytype) !void {
-        const conf = self.conf;
-        const b = self.b;
 
+    pub fn fmt(self: *Self, comptime formatString: []const u8, args: anytype) ![]const u8 {
+        return try std.fmt.allocPrint(self.allocator, formatString, args);
+    }
 
+    pub fn addToApk(self: *Self, b: *std.Build, apk: anytype) !void {
         if(apk.java_files.items.len == 0) {
-            if(conf.appProperties.hasCode) |hasCode| {
+            if(self.conf.appProperties.hasCode) |hasCode| {
                 if(hasCode) {
                     std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
                     return error.MissingJavaFiles;
@@ -307,6 +312,16 @@ pub const manifest = struct {
                     return error.InvalidProperty;
             }
         }
+
+        const renderedManifest = self.print();
+        const wf = b.addWriteFiles();
+        const lp: LazyPath = wf.add("AndroidManifest.xml", renderedManifest);
+        apk.setAndroidManifest(lp);
+    }
+
+    pub fn print(self: *Self) ![]const u8 {
+        const conf = self.conf;
+
         for(conf.activities) |activity| {
             if(activity.properties.exported) |exported| {
                 if(exported == false) {
@@ -318,12 +333,14 @@ pub const manifest = struct {
 
         const manifestHeaderTemplate = 
         \\<?xml version="1.0" encoding="utf-8"?>
-        \\<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-        \\   xmlns:tools="http://schemas.android.com/tools"
-        \\   package="{[packageName]s}">
+        \\<manifest
+        \\  xmlns:android="http://schemas.android.com/apk/res/android"
+        \\  xmlns:tools="http://schemas.android.com/tools"
+        \\  package="{[packageName]s}"
+        \\  >
         \\
         ;
-        const renderedHeader = b.fmt(manifestHeaderTemplate, .{
+        const renderedHeader = try self.fmt(manifestHeaderTemplate, .{
             .packageName = conf.packageName
         });
 
@@ -337,7 +354,7 @@ pub const manifest = struct {
         var permissionString: []const u8 = "";
         for(conf.permissions, 1..) |perm, i| {
             if(std.mem.containsAtLeast(u8, @embedFile("androidStrings/androidPermNames.txt"), 1, perm.name)) {
-                permissionString = try std.mem.concat(b.allocator, u8, &.{
+                permissionString = try std.mem.concat(self.allocator, u8, &.{
                     permissionString,
                     if(i > 1) (" " ** 2) else "",
                     "<uses-permission android:name=\"android.permission.", perm.name, "\"",
@@ -352,7 +369,7 @@ pub const manifest = struct {
         var featureString: []const u8 = "";
         for(conf.features, 1..) |feature, i| {
             if(std.mem.containsAtLeast(u8, @embedFile("androidStrings/androidFeatures.txt"), 1, feature.name)) {
-                featureString = try std.mem.concat(b.allocator, u8, &.{
+                featureString = try std.mem.concat(self.allocator, u8, &.{
                     featureString, 
                     "<uses-feature ", feature.name, 
                     " android:required=\"", (if(feature.required) "true" else "false"), "\"",
@@ -365,27 +382,27 @@ pub const manifest = struct {
         }
         //TODO: sensible default gles version
 
-        featureString = try std.mem.concat(b.allocator, u8, &.{
+        featureString = try std.mem.concat(self.allocator, u8, &.{
             featureString,
             "<uses-feature android:glEsVersion=\"", conf.glEsVersion, "\" android:required=\"true\"",
             tagClose
         });
 
-        const renderedFeatures = b.fmt(manifestFeaturesTemplate, .{
+        const renderedFeatures = try self.fmt(manifestFeaturesTemplate, .{
             .permissionString = permissionString,
             .featureString = featureString,
             .minSdkVersion = conf.apiLevel
         });
 
-        var propertiesString: []const u8 = try formatProps(b, conf.appProperties, appPropIndent);
-        for(conf.customAppProperties) |prop| {
-            propertiesString = try std.mem.concat(b.allocator, u8, &.{
+        var propertiesString: []const u8 = try formatProps(self.allocator, conf.appProperties.standard, appPropIndent);
+        for(conf.appProperties.custom) |prop| {
+            propertiesString = try std.mem.concat(self.allocator, u8, &.{
                 propertiesString,
                 (indent ** appPropIndent),
                 prop.name, "=\"", prop.value, "\"", "\n"
             });
         }
-        propertiesString = try std.mem.concat(b.allocator, u8, &.{
+        propertiesString = try std.mem.concat(self.allocator, u8, &.{
             (indent ** appPropIndent),
             propertiesString,
             (indent ** appPropIndent), ">\n"
@@ -396,29 +413,29 @@ pub const manifest = struct {
             var metaDataString: []const u8 = "";
             if(activity.metadata) |metadata| {
                 for(metadata) |metaProp| {
-                   metaDataString = try std.mem.concat(b.allocator, u8, &.{
-                        indent ** activityPropIndent,
+                   metaDataString = try std.mem.concat(self.allocator, u8, &.{
+                        indent ** (activityPropIndent + 1),
                         "<meta-data android:name=\"", metaProp.name, "\" ",
                         "android:value=\"", metaProp.value, "\"", tagClose, "\n"
                     }); 
                 }
             }
-            activitiesString = try std.mem.concat(b.allocator, u8, &.{
+            activitiesString = try std.mem.concat(self.allocator, u8, &.{
                 activitiesString,
                 "<activity\n", (indent ** activityPropIndent),
-                try formatProps(b, activity.properties, activityPropIndent),
+                try formatProps(self.allocator, activity.properties, activityPropIndent),
                 (indent ** activityPropIndent), ">\n",
                 metaDataString,
-                \\      <intent-filter>
-                \\          <action android:name="android.intent.action.MAIN" />
-                \\          <category android:name="android.intent.category.LAUNCHER" />
-                \\      </intent-filter>
-                \\  </activity>
+                \\          <intent-filter>
+                \\              <action android:name="android.intent.action.MAIN" />
+                \\              <category android:name="android.intent.category.LAUNCHER" />
+                \\          </intent-filter>
+                \\      </activity>
                 , if(i != conf.activities.len) "\n" else ""
             });
         }
 
-        const renderedManifest = try std.mem.concat(b.allocator, u8, &.{
+        const renderedManifest = try std.mem.concat(self.allocator, u8, &.{
             renderedHeader, 
             renderedFeatures, 
             indent, "<application\n",
@@ -427,11 +444,81 @@ pub const manifest = struct {
             indent, "</application>\n",
             "</manifest>"
         });
+        return renderedManifest;
 
-        std.log.debug("{s}\n", .{renderedManifest});
 
-        const wf = b.addWriteFiles();
-        const printed = wf.add("AndroidManifest.xml", renderedManifest);
-        apk.setAndroidManifest(printed);
     }
 };
+
+const exampleManifest =
+\\<?xml version="1.0" encoding="utf-8"?>
+\\<manifest
+\\  xmlns:android="http://schemas.android.com/apk/res/android"
+\\  xmlns:tools="http://schemas.android.com/tools"
+\\  package="com.zig.minimal"
+\\  >
+\\  <uses-feature android:glEsVersion="0x00020000" android:required="true" />
+\\  <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+\\  <uses-permission android:name="android.permission.INTERNET" />
+\\  <uses-sdk android:minSdkVersion="29" />
+\\  <application
+\\      android:hasCode="false"
+\\      android:icon="@mipmap/ic_launcher"
+\\      android:label="@string/app_name"
+\\      android:theme="@android:style/Theme.NoTitleBar.Fullscreen"
+\\      tools:targetApi="29"
+\\      >
+\\      <activity
+\\        android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
+\\        android:exported="true"
+\\        android:label="@string/app_name"
+\\        android:launchMode="singleInstance"
+\\        android:name="android.app.NativeActivity"
+\\        >
+\\          <meta-data android:name="android.app.lib_name" android:value="main" />
+\\          <intent-filter>
+\\              <action android:name="android.intent.action.MAIN" />
+\\              <category android:name="android.intent.category.LAUNCHER" />
+\\          </intent-filter>
+\\      </activity>
+\\  </application>
+\\</manifest>
+;
+
+test "generate correct manifest" {
+    std.testing.refAllDecls(@This());
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const alloc = arena.allocator();
+    const test_manifest = try manifest.init(alloc, .{
+            .apiLevel = 29,
+            .packageName = "com.zig.minimal",
+            .permissions = &.{
+                .{.name = "ACCESS_NETWORK_STATE"}, 
+                .{.name = "INTERNET"},
+            },
+            .appProperties = .{ 
+                .standard = .{ .hasCode = false },
+                .custom = &.{
+                    .{
+                        .name = "tools:targetApi",
+                        .value = try std.fmt.allocPrint(alloc, "{d}", .{29})
+                    }
+                }
+            },
+            .activities =  &.{
+                .{
+                    .properties = .{
+                        .launchMode = .singleInstance,
+                        .name = "android.app.NativeActivity",
+                        .configChanges = &.{.layoutDirection, .locale, .orientation, .uiMode, .screenLayout, .screenSize, .smallestScreenSize, .keyboard, .keyboardHidden, .navigation}
+                    },
+                }
+            },
+            .glEsVersion = "0x00020000"
+    });
+    const outputManifest = try test_manifest.print();
+    defer alloc.free(outputManifest);
+    try std.testing.expectEqualStrings(exampleManifest, outputManifest);
+}
