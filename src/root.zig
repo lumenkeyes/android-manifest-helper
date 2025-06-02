@@ -1,5 +1,6 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
+//TODO: sane indenting
 
 pub const ResourcesConfig = struct {
     appName: []const u8,
@@ -302,7 +303,7 @@ pub const manifest = struct {
 
     pub fn addToApk(self: *Self, b: *std.Build, apk: anytype) !void {
         if(apk.java_files.items.len == 0) {
-            if(self.conf.appProperties.hasCode) |hasCode| {
+            if(self.conf.appProperties.standard.hasCode) |hasCode| {
                 if(hasCode) {
                     std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
                     return error.MissingJavaFiles;
@@ -313,7 +314,7 @@ pub const manifest = struct {
             }
         }
 
-        const renderedManifest = self.print();
+        const renderedManifest = try self.print();
         const wf = b.addWriteFiles();
         const lp: LazyPath = wf.add("AndroidManifest.xml", renderedManifest);
         apk.setAndroidManifest(lp);
