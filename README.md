@@ -10,6 +10,10 @@ const manifestHelper = @import("android_manifest_helper").Helper
 // set up apk, etc.
 // ...
 
+// ...
+// add artifacts to apk
+// ...
+
 const manifest = try manifestHelper.manifest.init(b, .{
     .apiLevel = <APPROPRIATE_API_LEVEL>,
     .packageName = "com.zig.<EXE_NAME>",

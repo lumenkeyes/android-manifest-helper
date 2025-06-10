@@ -41,6 +41,7 @@ pub fn createResources(b: *std.Build, conf: ResourcesConfig) !LazyPath {
     return resourceDir;
 }
 
+/// https://developer.android.com/guide/topics/manifest/manifest-intro
 pub const ManifestConfig = struct {
     apiLevel: u32,
     packageName: []const u8,
@@ -63,7 +64,7 @@ pub const ManifestConfig = struct {
     glEsVersion: []const u8 = ""
 };
 
-// https://developer.android.com/guide/topics/manifest/application-element
+/// https://developer.android.com/guide/topics/manifest/application-element
 pub const AndroidAppProperties = struct {
     allowTaskReparenting: ?bool = null,
     allowBackup: ?bool = null,
@@ -82,10 +83,13 @@ pub const AndroidAppProperties = struct {
     } = null,
     backupAgent: ?[]const u8 = null,
     backupInForeground: ?bool = null,
-    banner: ?[]const u8 = null, //drawable resource
-    dataExtractionRules: ?[]const u8 = null, // "string resource"
+    /// drawable resource
+    banner: ?[]const u8 = null,
+    /// string resource
+    dataExtractionRules: ?[]const u8 = null,
     debuggable: ?bool = null,
-    description: ?[]const u8 = null,// string resource
+    /// string resource
+    description: ?[]const u8 = null,
     enabled: ?bool = null,
     enabledOnBackInvokedCallback: ?bool = null,
     extractNativeLibs: ?bool = null,
@@ -95,16 +99,19 @@ pub const AndroidAppProperties = struct {
     hasCode: ?bool = true,
     hasFragileUserData: ?bool = null,
     hardwareAccelerated: ?bool = null,
-    icon: ?[]const u8 = "@mipmap/ic_launcher", //drawable resource
+    /// drawable resource, your app's launcher icon
+    icon: ?[]const u8 = "@mipmap/ic_launcher",
     isGame: ?bool = null,
     isMonitoringTool: ?enum { parental_control, enterprise_management, other } = null,
     killAfterRestore: ?bool = null,
     largeHeap: ?bool = null,
     label: ?[]const u8 = "@string/app_name",
-    logo: ?[]const u8 = null, //drawable resource
+    /// drawable resource
+    logo: ?[]const u8 = null,
     manageSpaceActivity: ?[]const u8 = null,
     name: ?[]const u8 = null,
-    networkSecurityConfig: ?[]const u8 = null, // xml resource
+    /// xml resource
+    networkSecurityConfig: ?[]const u8 = null,
     permission: ?[]const u8 = null,
     persistent: ?bool = null,
     process: ?[]const u8 = null,
@@ -116,19 +123,22 @@ pub const AndroidAppProperties = struct {
     supportsRtl: ?bool = null,
     taskAffinity: ?[]const u8 = null,
     testOnly: ?bool = null,
+    /// A theme/style (e.g., "@android:style/Theme.NoTitleBar.Fullscreen")
     theme: ?[]const u8 = null, //resource or theme
     uiOptions: ?enum {none, splitActionBarWhenNarrow} = null,
     usesCleartextTraffic: ?bool = null,
     vmSafeMode: ?bool = null,
 };
 
+/// https://developer.android.com/guide/topics/manifest/activity-element
 pub const AndroidActivity = struct {
     properties: struct {
         allowEmbedded: ?bool = null,
         allowTaskReparenting: ?bool = null,
         alwaysRetainTaskState: ?bool = null,
         autoRemoveFromRecents: ?bool = null,
-        banner: ?[]const u8 = null, //"drawable resource",
+        /// a drawable resource
+        banner: ?[]const u8 = null,
         canDisplayOnRemoteDevices: ?bool = null,
         clearTaskOnLaunch: ?bool = null,
         colorMode: ?enum { hdr , wideColorGamut } = null,
@@ -161,9 +171,11 @@ pub const AndroidActivity = struct {
         exported: ?bool = true,
         finishOnTaskLaunch: ?bool = null,
         hardwareAccelerated: ?bool = null,
-        icon: ?[]const u8 = null, //"drawable resource",
+        /// a drawable resource
+        icon: ?[]const u8 = null,
         immersive: ?bool = null,
-        label: ?[]const u8 = "@string/app_name", //"string resource",
+        /// a string resource, defaults to inheriting from the app
+        label: ?[]const u8 = null,
         launchMode: ?enum {
                 standard, 
                 singleTop,
@@ -180,6 +192,7 @@ pub const AndroidActivity = struct {
         maxRecents: ?i64 = null,
         maxAspectRatio: ?f64 = null,
         multiprocess: ?bool = null,
+        /// the name of the java class this activity inherits from (e.g., Activity, NativeActivity, etc.)
         name: ?[]const u8 = null,
         noHistory: ?bool = null,
         parentActivityName: ?[]const u8 = null ,
@@ -203,14 +216,15 @@ pub const AndroidActivity = struct {
                 reversePortrait ,
                 sensorLandscape , 
                 sensorPortrait ,
-                                 userLandscape , userPortrait ,
-                                 sensor , fullSensor , nosensor ,
-                                 user , fullUser , locked } = null,
+                userLandscape , userPortrait ,
+                sensor, fullSensor , nosensor ,
+             user , fullUser , locked } = null,
         showForAllUsers: ?bool = null,
         stateNotNeeded: ?bool = null,
         supportsPictureInPicture: ?bool = null,
         taskAffinity: ?[]const u8 = null,
-        theme: ?[]const u8 = null, //"resource or theme",
+        /// resource or theme
+        theme: ?[]const u8 = null,
         uiOptions: ?enum {
                 none, 
                 splitActionBarWhenNarrow 
@@ -230,12 +244,7 @@ pub const AndroidActivity = struct {
     metadata: ?[]const struct {
         name: []const u8,
         value: []const u8
-    } = &.{
-        .{
-            .name="android.app.lib_name",
-            .value="main"
-        }
-    },
+    } = &.{},
     intentFilters: ?[]const u8 = null,
 };
 
@@ -301,19 +310,49 @@ pub const manifest = struct {
         return try std.fmt.allocPrint(self.allocator, formatString, args);
     }
 
+    /// call this AFTER adding all desired artifacts to your APK
     pub fn addToApk(self: *Self, b: *std.Build, apk: anytype) !void {
-        if(apk.java_files.items.len == 0) {
-            if(self.conf.appProperties.standard.hasCode) |hasCode| {
-                if(hasCode) {
-                    std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
-                    return error.MissingJavaFiles;
+        const hasCode = self.conf.appProperties.standard.hasCode orelse {
+            std.log.err("hasCode property should not be null", .{});
+            return error.InvalidProperty;
+        };
+        if(hasCode) {
+            if(apk.java_files.items.len == 0) {
+            std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
+            return error.MissingJavaFiles;
+            }
+        } else {}
+
+        blk: {
+            for(self.conf.activities) |activity| {
+                if(activity.metadata == null) break :blk;
+                var requiresNamedLib: bool = false;
+                var requiredLibName: []const u8 = undefined;
+                var haveMatchingLib: bool = false;
+                var haveMainLib: bool = false;
+                for(activity.metadata.?) |meta| {
+                    if(std.mem.eql(u8, "android.app.lib_name", meta.name)) {
+                        requiresNamedLib = true;
+                        requiredLibName = meta.value;
+                        for(apk.artifacts.items) |artifact| {
+                            if(std.mem.eql(u8, meta.value, artifact.name)) haveMatchingLib = true;
+                            if(std.mem.eql(u8, "main", artifact.name)) haveMainLib = true;
+                        }
+                    }
                 }
-            } else {
-                    std.log.err("hasCode property should not be null", .{});
-                    return error.InvalidProperty;
+                if(requiresNamedLib) {
+                    if(!haveMatchingLib) {
+                        std.log.err("android.app.lib_name \"{s}\" of activity does not match any artifact currently installed to APK\n", .{requiredLibName});
+                        return error.MissingLibrary;
+                    }
+                } else {
+                    if(!haveMainLib and !hasCode) {
+                        std.log.err("Native Activity requires a corresponding shared library, either \"libmain.so\" or a custom name declared in activity metadata", .{});
+                        return error.MissingLibrary;
+                    }
+                }
             }
         }
-
         const renderedManifest = try self.print();
         const wf = b.addWriteFiles();
         const lp: LazyPath = wf.add("AndroidManifest.xml", renderedManifest);
@@ -322,7 +361,6 @@ pub const manifest = struct {
 
     pub fn print(self: *Self) ![]const u8 {
         const conf = self.conf;
-
         for(conf.activities) |activity| {
             if(activity.properties.exported) |exported| {
                 if(exported == false) {
