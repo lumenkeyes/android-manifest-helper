@@ -1,5 +1,9 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
+const androidPermNames = blk: {
+    break :blk @embedFile("androidStrings/androidPermNames.txt");
+};
+const androidFeatures = @embedFile("features");
 //TODO: sane indenting
 
 pub const ResourcesConfig = struct {
@@ -59,8 +63,9 @@ pub const ManifestConfig = struct {
     } = &.{},
     features: []const struct {
         name: []const u8,
-        required: bool,
+        required: bool = true,
     } = &.{},
+    ndkPath: ?[]const u8 = null,
     glEsVersion: []const u8 = ""
 };
 
@@ -392,7 +397,7 @@ pub const manifest = struct {
 
         var permissionString: []const u8 = "";
         for(conf.permissions, 1..) |perm, i| {
-            if(std.mem.containsAtLeast(u8, @embedFile("androidStrings/androidPermNames.txt"), 1, perm.name)) {
+            if(std.mem.containsAtLeast(u8, androidPermNames, 1, perm.name)) {
                 permissionString = try std.mem.concat(self.allocator, u8, &.{
                     permissionString,
                     if(i > 1) (" " ** 2) else "",
@@ -407,7 +412,7 @@ pub const manifest = struct {
 
         var featureString: []const u8 = "";
         for(conf.features, 1..) |feature, i| {
-            if(std.mem.containsAtLeast(u8, @embedFile("androidStrings/androidFeatures.txt"), 1, feature.name)) {
+            if(std.mem.containsAtLeast(u8,androidFeatures, 1, feature.name)) {
                 featureString = try std.mem.concat(self.allocator, u8, &.{
                     featureString, 
                     "<uses-feature ", feature.name, 
@@ -510,7 +515,6 @@ const exampleManifest =
 \\      <activity
 \\        android:configChanges="layoutDirection|locale|orientation|uiMode|screenLayout|screenSize|smallestScreenSize|keyboard|keyboardHidden|navigation"
 \\        android:exported="true"
-\\        android:label="@string/app_name"
 \\        android:launchMode="singleInstance"
 \\        android:name="android.app.NativeActivity"
 \\        >
@@ -538,7 +542,7 @@ test "generate correct manifest" {
                 .{.name = "INTERNET"},
             },
             .appProperties = .{ 
-                .standard = .{ .hasCode = false },
+                .standard = .{ .hasCode = false, .theme = "@android:style/Theme.NoTitleBar.Fullscreen"},
                 .custom = &.{
                     .{
                         .name = "tools:targetApi",
@@ -553,6 +557,12 @@ test "generate correct manifest" {
                         .name = "android.app.NativeActivity",
                         .configChanges = &.{.layoutDirection, .locale, .orientation, .uiMode, .screenLayout, .screenSize, .smallestScreenSize, .keyboard, .keyboardHidden, .navigation}
                     },
+                    .metadata = &.{
+                        .{
+                            .name = "android.app.lib_name",
+                            .value = "main"
+                        }
+                    }
                 }
             },
             .glEsVersion = "0x00020000"
