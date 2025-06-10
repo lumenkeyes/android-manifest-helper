@@ -215,7 +215,7 @@ pub const AndroidActivity = struct {
                 none, 
                 splitActionBarWhenNarrow 
             } = null,
-        windowSoftInputMode: ?[]enum {
+        windowSoftInputMode: ?[]const enum {
                 stateUnspecified,
                 stateUnchanged, 
                 stateHidden,
