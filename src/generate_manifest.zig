@@ -1,40 +1,7 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
-// const androidFeatures = @import("buildOptions").features;
-const androidFeatures = @embedFile("features");
-const androidPermNames = @embedFile("permissions");
-const manifest_conf = @import("build_options").manifest_conf;
-const ManifestConfig = @TypeOf(manifest_conf);
-// const androidPermNames = @embedFile("androidStrings/androidPermNames.txt");
+const ManifestConfig = @import("types.zig").ManifestConfig;
 //TODO: sane indenting
-
-
-pub fn main() !void {
-    var arena = std.heap.ArenaAllocator.init(std.heap.smp_allocator);
-    const alloc = arena.allocator();
-
-    // const args = try std.process.argsAlloc(alloc);
-    // std.log.debug("{s}\n", .{args[1]});
-
-    // const confFile = try std.fs.openFileAbsolute(args[1], .{});
-    // const contentStat = try confFile.stat();
-    // const contents = try confFile.readToEndAlloc(alloc, contentStat.size);
-    const conf: ManifestConfig = manifest_conf;
-    // std.log.debug("content length: {d}", .{contents.len});
-    // std.log.debug("content ptr: {any}", .{contents.ptr});
-    // const conf: ManifestConfig = std.mem.bytesToValue(ManifestConfig, contents);
-    // const conf = std.mem.bytesAsValue(ManifestConfig, contents);
-
-    // const manifest_conf = @embedFile("manifest_config");
-    // const conf = std.mem.bytesToValue(ManifestConfig, manifest_conf);
-
-    std.log.debug("{s}", .{conf.packageName});
-    const printed_mani = try print(conf, alloc, androidFeatures, androidPermNames);
-    const stdout = std.io.getStdOut();
-    try stdout.writeAll(printed_mani);
-    stdout.close();
-    return std.process.cleanExit();
-}
 
 const indent = " " ** 2;
 const appPropIndent = 3;
@@ -83,75 +50,7 @@ fn formatProps(allocator: std.mem.Allocator, instance: anytype, comptime indentC
 // https://developer.android.com/ndk/guides/sdk-versions#compilesdkversion
 // https://developer.android.com/reference/android/Manifest.permission
 
-pub const manifest = struct {
-    // const Self = @This();
-    // conf: ManifestConfig,
-    // allocator: std.mem.Allocator,
-    // pub fn init(alloc: std.mem.Allocator, conf: ManifestConfig) !*Self {
-    //     var self = try alloc.create(Self);
-    //     self.conf = conf;
-    //     self.allocator = alloc;
-    //     return self;
-    // }
-    //
-    // pub fn fmt(self: *Self, comptime formatString: []const u8, args: anytype) ![]const u8 {
-    //     return try std.fmt.allocPrint(self.allocator, formatString, args);
-    // }
-    //
-    // /// call this AFTER adding all desired artifacts to your APK
-    // pub fn addToApk(self: *Self, b: *std.Build, apk: anytype) !void {
-    //     const hasCode = self.conf.appProperties.standard.hasCode orelse {
-    //         std.log.err("hasCode property should not be null", .{});
-    //         return error.InvalidProperty;
-    //     };
-    //     if(hasCode) {
-    //         if(apk.java_files.items.len == 0) {
-    //         std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
-    //         return error.MissingJavaFiles;
-    //         }
-    //     } else {}
-    //
-    //     blk: {
-    //         for(self.conf.activities) |activity| {
-    //             if(activity.metadata == null) break :blk;
-    //             var requiresNamedLib: bool = false;
-    //             var requiredLibName: []const u8 = undefined;
-    //             var haveMatchingLib: bool = false;
-    //             var haveMainLib: bool = false;
-    //             for(activity.metadata.?) |meta| {
-    //                 if(std.mem.eql(u8, "android.app.lib_name", meta.name)) {
-    //                     requiresNamedLib = true;
-    //                     requiredLibName = meta.value;
-    //                     for(apk.artifacts.items) |artifact| {
-    //                         if(std.mem.eql(u8, meta.value, artifact.name)) haveMatchingLib = true;
-    //                         if(std.mem.eql(u8, "main", artifact.name)) haveMainLib = true;
-    //                     }
-    //                 }
-    //             }
-    //             if(requiresNamedLib) {
-    //                 if(!haveMatchingLib) {
-    //                     std.log.err("android.app.lib_name \"{s}\" of activity does not match any artifact currently installed to APK\n", .{requiredLibName});
-    //                     return error.MissingLibrary;
-    //                 }
-    //             } else {
-    //                 if(!haveMainLib and !hasCode) {
-    //                     std.log.err("Native Activity requires a corresponding shared library, either \"libmain.so\" or a custom name declared in activity metadata", .{});
-    //                     return error.MissingLibrary;
-    //                 }
-    //             }
-    //         }
-    //     }
-    //     const renderedManifest = try self.print();
-    //     const wf = b.addWriteFiles();
-    //     const lp: LazyPath = wf.add("AndroidManifest.xml", renderedManifest);
-    //     apk.setAndroidManifest(lp);
-    // }
-    //
-};
     pub fn print(conf: ManifestConfig, allocator: std.mem.Allocator, features: []const u8, permissions: []const u8) ![]const u8 {
-        // const conf = self.conf;
-        // const androidPermNames = conf.androidPermNames;
-        // const androidFeatures = conf.androidFeatures;
         for(conf.activities) |activity| {
             if(activity.properties.exported) |exported| {
                 if(exported == false) {
@@ -321,7 +220,7 @@ test "generate correct manifest" {
     defer arena.deinit();
 
     const alloc = arena.allocator();
-    const test_manifest = try manifest.init(alloc, .{
+    const test_conf = ManifestConfig{
             .apiLevel = 29,
             .packageName = "com.zig.minimal",
             .permissions = &.{
@@ -353,8 +252,8 @@ test "generate correct manifest" {
                 }
             },
             .glEsVersion = "0x00020000"
-    });
-    const outputManifest = try test_manifest.print();
+    };
+    const outputManifest = try print(test_conf, alloc, @embedFile("androidStrings/androidFeatures.txt"), @embedFile("androidStrings/androidPermNames.txt"));
     defer alloc.free(outputManifest);
     try std.testing.expectEqualStrings(exampleManifest, outputManifest);
 }
