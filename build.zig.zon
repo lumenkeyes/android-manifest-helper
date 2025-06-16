@@ -79,6 +79,10 @@
         "build.zig",
         "build.zig.zon",
         "src",
+        "features.zig",
+        "permissions.zig",
+        "buildOptions.zig",
+        ".zig-cache"
         // For example...
         //"LICENSE",
         //"README.md",
