@@ -1,10 +1,7 @@
 const std = @import("std");
 const LazyPath = std.Build.LazyPath;
-const androidPermNames = blk: {
-    break :blk @embedFile("androidStrings/androidPermNames.txt");
-};
-const androidFeatures = @embedFile("features");
-//TODO: sane indenting
+const androidPermNames = @embedFile("androidStrings/androidPermNames.txt");
+const androidFeatures = @embedFile("androidStrings/androidFeatures.txt");
 
 pub const ResourcesConfig = struct {
     appName: []const u8,

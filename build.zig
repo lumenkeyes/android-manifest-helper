@@ -1,6 +1,8 @@
 const std = @import("std");
 const fallbackFeaturesFile =  @embedFile("src/androidStrings/androidFeatures.txt");
 pub const Helper = @import("src/root.zig");
+pub const Manifest = Helper.manifest;
+pub const ManifestConfig = Helper.ManifestConfig;
 
 pub fn build(b: *std.Build) !void {
     const api_level = b.option(usize, "android_api_level", "the version of android you're targeting");
