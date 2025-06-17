@@ -212,6 +212,53 @@ const exampleManifest =
 \\</manifest>
 ;
 
+pub fn check(conf: ManifestConfig, apk: anytype) !void {
+    if(conf.activities.len == 0) {
+        std.log.err("must add at least one activity\n", .{});
+        return error.NoActivities;
+    }
+    const hasCode = conf.appProperties.standard.hasCode orelse {
+        std.log.err("hasCode property should not be null", .{});
+        return error.InvalidProperty;
+    };
+    if(hasCode) {
+        if(apk.java_files.items.len == 0) {
+        std.log.err("must add at least one java source file or configure the android manifest with hasCode=\"false\"", .{});
+        return error.MissingJavaFiles;
+        }
+    } else {}
+    blk: {
+        for(conf.activities) |activity| {
+            if(activity.metadata == null) break :blk;
+            var requiresNamedLib: bool = false;
+            var requiredLibName: []const u8 = undefined;
+            var haveMatchingLib: bool = false;
+            var haveMainLib: bool = false;
+            for(activity.metadata.?) |meta| {
+                if(std.mem.eql(u8, "android.app.lib_name", meta.name)) {
+                    requiresNamedLib = true;
+                    requiredLibName = meta.value;
+                    for(apk.artifacts.items) |artifact| {
+                        if(std.mem.eql(u8, meta.value, artifact.name)) haveMatchingLib = true;
+                        if(std.mem.eql(u8, "main", artifact.name)) haveMainLib = true;
+                    }
+                }
+            }
+            if(requiresNamedLib) {
+                if(!haveMatchingLib) {
+                    std.log.err("android.app.lib_name \"{s}\" of activity does not match any artifact currently installed to APK\n", .{requiredLibName});
+                    return error.MissingLibrary;
+                }
+            } else {
+                if(!haveMainLib and !hasCode) {
+                    std.log.err("Native Activity requires a corresponding shared library, either \"libmain.so\" or a custom name declared in activity metadata", .{});
+                    return error.MissingLibrary;
+                }
+            }
+        }
+    }
+}
+
 test "generate correct manifest" {
     std.testing.refAllDecls(@This());
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);

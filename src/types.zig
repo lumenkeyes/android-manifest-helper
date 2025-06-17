@@ -21,6 +21,7 @@ pub const ManifestConfig = struct {
         required: bool = true,
     } = &.{},
     ndkPath: ?[]const u8 = null,
+    /// first digit is major version, second is minor
     glEsVersion: [2]u16 = .{2, 0}
 };
 

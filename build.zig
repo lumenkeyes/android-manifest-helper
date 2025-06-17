@@ -32,11 +32,19 @@ pub fn build(b: *std.Build) !void {
     b.getInstallStep().dependOn(tests_step);
 }
 
-pub fn createManifest(conf: struct {
-    b: *std.Build,
+const CombinedConf = struct {
+    b: *Build,
     manifest_conf: ManifestConfig,
     sdkPath: ?[]const u8 = null,
-}) !std.Build.LazyPath {
+};
+
+pub fn createManifest(apk: anytype, conf: CombinedConf) !void {
+    const manifest = try createManifestUnchecked(conf);
+    try @import("src/generate_manifest.zig").check(conf.manifest_conf, apk);
+    apk.setAndroidManifest(manifest);
+}
+
+pub fn createManifestUnchecked(conf: CombinedConf) !std.Build.LazyPath {
     const b = conf.b;
     const manifest_contents = blk: {
         if(conf.sdkPath) |sdkPath| {
@@ -61,6 +69,7 @@ pub fn createManifest(conf: struct {
     b.getInstallStep().dependOn(&wf.step);
     return manifest;
 }
+
 
 pub fn createResources(b: *std.Build, conf: ResourcesConfig) !std.Build.LazyPath {
     return try @import("src/generate_resources.zig").createResources(b, conf);
