@@ -74,9 +74,6 @@ fn formatProps(allocator: std.mem.Allocator, instance: anytype, comptime indentC
         const renderedHeader = try std.fmt.allocPrint(allocator, manifestHeaderTemplate, .{
             .packageName = try allocator.dupe(u8, conf.packageName)
         });
-        // const renderedHeader = try self.fmt(try self.allocator.dupe(u8, manifestHeaderTemplate), .{
-        //     .packageName = conf.packageName
-        // });
 
         const manifestFeaturesTemplate = 
         \\  {[featureString]s}
@@ -116,9 +113,10 @@ fn formatProps(allocator: std.mem.Allocator, instance: anytype, comptime indentC
         }
         //TODO: sensible default gles version
 
+        const glesString = try std.fmt.allocPrint(allocator, "0x{X:0>4}{X:0>4}", .{conf.glEsVersion[0], conf.glEsVersion[1]});
         featureString = try std.mem.concat(allocator, u8, &.{
             featureString,
-            "<uses-feature android:glEsVersion=\"", conf.glEsVersion, "\" android:required=\"true\"",
+            "<uses-feature android:glEsVersion=\"", glesString, "\" android:required=\"true\"",
             tagClose
         });
 
@@ -251,7 +249,7 @@ test "generate correct manifest" {
                     }
                 }
             },
-            .glEsVersion = "0x00020000"
+            .glEsVersion = .{2, 0}
     };
     const outputManifest = try print(test_conf, alloc, @embedFile("androidStrings/androidFeatures.txt"), @embedFile("androidStrings/androidPermNames.txt"));
     defer alloc.free(outputManifest);

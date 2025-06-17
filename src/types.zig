@@ -21,7 +21,7 @@ pub const ManifestConfig = struct {
         required: bool = true,
     } = &.{},
     ndkPath: ?[]const u8 = null,
-    glEsVersion: []const u8 = ""
+    glEsVersion: [2]u16 = .{2, 0}
 };
 
 /// https://developer.android.com/guide/topics/manifest/application-element
